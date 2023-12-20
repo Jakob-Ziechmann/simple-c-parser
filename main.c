@@ -18,7 +18,7 @@ struct Ast {
         Ast_eq,
     } tag;
     union {
-        struct Ast_literal {int literal;} Ast_literal;
+        struct Ast_literal {char literal;} Ast_literal;
         struct Ast_identifier { char identifier;} Ast_identifier;
         struct Ast_not {Ast *right;} Ast_not;
         struct Ast_and {Ast *left; Ast *right;} Ast_and;
@@ -38,24 +38,7 @@ Ast *ast_new(Ast ast) {
 }
 
 #define AST_NEW(tag, ...) \
-  ast_new((AST){tag, {.tag=(struct tag){__VA_ARGS__}}})
-
-Ast* test(void) {
-    Ast* term_ = ast_new((Ast){
-    Ast_and, {
-        .Ast_and = (struct Ast_and) {
-            ast_new((Ast) {
-                Ast_literal,
-                {.Ast_literal = (struct Ast_literal) {'p'}}
-            }),
-            ast_new((Ast) {
-                Ast_literal,
-                {.Ast_literal = (struct Ast_literal) {'q'}}
-            }),
-        }
-    }
-});
-}
+  ast_new((Ast){tag, {.tag=(struct tag){__VA_ARGS__}}})
 
 
 void ast_print(Ast* ptr){
@@ -65,6 +48,8 @@ void ast_print(Ast* ptr){
         case Ast_and: {
             struct Ast_and data = ast.data.Ast_and;
             printf("&");
+            ast_print(data.right);
+            ast_print(data.left);
         }
 
         return;
@@ -80,64 +65,6 @@ void ast_print(Ast* ptr){
 
 
 
-
-enum tokenizer {start = 0, az = 1, singleop = 2, lieq = 3, lieq2 = 4, ri = 5, rieq = 6, literal = 7, trap = 8};
-
-enum tokenizer state = start;
-
-int isAcceptingState(enum tokenizer state){
-    switch (state) {
-        case start: return 0;
-        case lieq: return 0;
-        case ri: return 0;
-        default: return 1;
-    }
-}
-
-int findMaxToken(enum tokenizer state, char* x){
-    char* currunt = x;
-    char* next = x + 1;
-    enum tokenizer nextState = trap;
-    
-    switch (state) {
-        case start: 
-            if (isalpha(*currunt)) nextState = az;
-            if (*currunt == '(' | *currunt == ')' | *currunt == '|' | *currunt == '&' | *currunt == '!') nextState = singleop;
-            if (*currunt == '<') nextState = lieq;
-            if (*currunt == '=') nextState = ri;
-            break;
-
-        case az:
-            if (isalpha(*currunt)) nextState = az;
-            break;
-
-        case lieq:
-            if (*currunt == '=') nextState = lieq2;
-            break;
-
-        case lieq2:
-            if (*currunt == '>') nextState = rieq;
-            break;
-
-        case ri:
-            if (*currunt == '>') nextState = rieq;
-            break;
-
-        default: 
-            break;
-    }
-
-
-    printf("%d\n", (int)nextState);
-    if (nextState == trap) return 0;
-
-    int maxToken = findMaxToken(nextState, next);
-
-    if (maxToken == 0 && !(isAcceptingState(nextState))) {return 0;}
-    return maxToken + 1;
-
-}
-
 char* str_cutoff(char* str, int cutindex){
     
     char* strcut = (char *)malloc(cutindex + 1); 
@@ -149,26 +76,31 @@ char* str_cutoff(char* str, int cutindex){
 
 
 
-
-
-/* char* nextToken(char* x){
-    int toklen = findMaxToken(start, x);
-    char* y = (char *)malloc(strlen(x) + 1);
-    return str_cutoff(x, y, toklen);
-} */
-
 int main(void){
-    char* x = "hallo(hallo)";
-    char* y = (char *)malloc(strlen(x) + 1);
-    printf("%d\n", findMaxToken(start, x));
-    //printf("%s\n", nextToken(x));
-    char *d = str_cutoff(x, 3);
-    printf("%s\n", d);
+//test tree
 
-    Ast* z = test;
-    ast_print(z);
-    //printf("%c\n", *y);
-    //printf("%s\n", y);
+Ast* term_ = ast_new((Ast){
+    Ast_and, {
+        .Ast_and = (struct Ast_and) {
+            ast_new((Ast) {
+                Ast_literal,
+                {.Ast_literal = (struct Ast_literal) {'p'}}
+            }),
+            ast_new((Ast) {
+                Ast_literal,
+                {.Ast_literal = (struct Ast_literal) {'q'}}
+            }),
+        }
+    }
+});
+
+
+    Ast* term = 
+        AST_NEW(Ast_and, AST_NEW(Ast_literal, 'p'), AST_NEW(Ast_literal, 'q'));
+
+
+    ast_print(term);
+    printf("\n");
     
     return EXIT_SUCCESS;
 
