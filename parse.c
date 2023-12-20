@@ -34,21 +34,21 @@ TOKEN token = {x, y};
 
 int start(void) {
     if (token.tokenType == DELIMITER) {
-        if (A) {
+        if (A()) {
             if (token.tokenType == DELIMITER){
                 return 1;
             }
         }
     }
-    else if (A){
+    else if (A()){
         if (token.tokenType == INFIX_OPRATOR){
-            if (A){
+            if (A()){
                 return 1;
             }
         }
     }
     else if (token.tokenType == PREFIX_OPERATOR) {
-        if (A){
+        if (A()){
             return 1;
         }
     }
@@ -68,33 +68,33 @@ int start(void) {
 
 int A(void) {
     if (token.tokenType == DELIMITER){
-        if (A){
+        if (A()){
             if (token.tokenType == DELIMITER){
-                if (NA) {
+                if (NA()) {
                     return 1;
                 }
             }
         }
     }
     else if (token.tokenType == PREFIX_OPERATOR){
-        if (A){
-            if (NA) {
+        if (A()){
+            if (NA()) {
                 return 1;
             }
         }
     }
     else if (token.tokenType == LITERAL) {
-        if (NA) {
+        if (NA()) {
             return 1;
         }
     }
     else if (token.tokenType == IDENTIFIER) {
-        if (NA) {
+        if (NA()) {
             return 1;
         }
     }
     else if (token.tokenType == DELIMITER) {
-        if (A) {
+        if (A()) {
             if (token.tokenType == DELIMITER){
                 return 1;
             }
@@ -109,14 +109,14 @@ int A(void) {
 
 int NA(void) {
     if (token.tokenType == INFIX_OPRATOR) {
-        if (A) {
-            if (NA) {
+        if (A()) {
+            if (NA()) {
                 return 1;
             }
         }
     }
     else if (token.tokenType == INFIX_OPRATOR) {
-        if (A) {
+        if (A()) {
             return 1;
         }
     }
