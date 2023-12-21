@@ -6,9 +6,10 @@ BINDIR=bin
 
 SOURCES=$(wildcard $(SRCDIR)/*.c)
 OBJECTS=$(patsubst $(SRCDIR)/%.c,$(BINDIR)/%.o,$(SOURCES))
-EXECUTABLE=$(BINDIR)/myprogram
+EXECUTABLE=$(BINDIR)/parser
 
 all: $(EXECUTABLE)
+	./bin/parser
 
 $(EXECUTABLE): $(OBJECTS)
 	$(CC) $(CFLAGS) $^ -o $@
