@@ -189,7 +189,7 @@ TOKEN nextToken(char* string) {
   char* token_string = splitSringAfter(string, token_delim.depth);
   char* rest_string = string + token_delim.depth;
 
-  TOKEN token = {type, token_string};
+  TOKEN token = {type, token_string, rest_string};
   return token;  
 }
 
