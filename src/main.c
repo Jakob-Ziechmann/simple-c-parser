@@ -22,18 +22,55 @@ void ast_print(Ast* ptr){
         case Ast_and: {
             struct Ast_and data = ast.data.Ast_and;
             printf("&");
-            ast_print(data.right);
             ast_print(data.left);
+            ast_print(data.right);
         }
 
         return;
+
+        case Ast_identifier: {
+            struct Ast_identifier data = ast.data.Ast_identifier;
+            printf("%c",data.identifier);
+        }
+        return;
+
+        case Ast_eq: {
+            struct Ast_eq data = ast.data.Ast_eq;
+            printf("<=>");
+            ast_print(data.left);
+            ast_print(data.right);
+        }
+
+        case Ast_li: {
+            struct Ast_li data = ast.data.Ast_li;
+            printf("<=");
+            ast_print(data.left);
+            ast_print(data.right);
+        }
+
+        case Ast_not: {
+            struct Ast_not data = ast.data.Ast_not;
+            printf("!");
+            ast_print(data.right);
+        }
+
+        case Ast_or: {
+            struct Ast_or data = ast.data.Ast_or;
+            printf("+");
+            ast_print(data.left);
+            ast_print(data.right);
+        }
+
+        case Ast_ri: {
+            struct Ast_ri data = ast.data.Ast_ri;
+            printf("=>");
+            ast_print(data.left);
+            ast_print(data.right);
+        }
 
         case Ast_literal: {
-            struct Ast_literal data = ast.data.Ast_literal;
-            printf("%c",data.literal);
+            struct 
         }
-        return;
-    }
 }
 
 
