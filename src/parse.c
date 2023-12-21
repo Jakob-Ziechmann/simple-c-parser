@@ -10,17 +10,6 @@ typedef struct {
     char* stringRest;
 } TOKEN_CONSUME;
 
-
-
-Ast *ast_new(Ast ast) {
-  Ast *ptr = malloc(sizeof(Ast));
-  if (ptr) *ptr = ast;
-  return ptr;
-}
-
-#define AST_NEW(tag, ...) \
-  ast_new((Ast){tag, {.tag=(struct tag){__VA_ARGS__}}})
-
 int isStringEq(char* string1, char* string2) {
   return strcmp(string1, string2) == 0;
 }
@@ -31,25 +20,28 @@ int isStringEq(char* string1, char* string2) {
 Ast* start(char* parseString);
 TOKEN_CONSUME A(char* parseString), NA(char* parseString);
 
-int isEmpty(Ast* ast){
-    return ast->tag == Ast_empty;
+Ast* parseString(char* string){ 
+  return start(string);
 }
-
 
 // Start -> ( A ) | A IO A | PO A | L | ID
 
 Ast* start(char* parseString) {
+  printf("stared parsing\n");
+
   TOKEN curTok = nextToken(parseString);
-  int rest_empty = strlen(curTok.rest) == 0;
+  int rest_empty = (strlen(curTok.rest) == 0);
+
+  printf("first token: %s\n", tokenToStr(curTok));
   // terminal trees
   if(curTok.tokenType == IDENTIFIER && rest_empty) {
-    Ast *id = AST_NEW(Ast_identifier, *curTok.token);
+    Ast *id = AST_NEW(Ast_identifier, curTok.token);
     return id;
   }
 
   if(curTok.tokenType == LITERAL && rest_empty) {
      Ast *literal = AST_NEW(Ast_literal_false);
-     if(*curTok.token == '0') literal = AST_NEW(Ast_literal_true);
+     if(*curTok.token == '1') literal = AST_NEW(Ast_literal_true);
      return literal;
   }
   
@@ -128,8 +120,8 @@ TOKEN_CONSUME NA(char* parseString) {
 
 
 
-int main(void) {
-  char* parseInput = "0";
-
-  return EXIT_SUCCESS;
-}
+// int main(void) {
+//   char* parseInput = "0";
+//
+//   return EXIT_SUCCESS;
+// }
