@@ -187,6 +187,7 @@ TOKEN nextToken(char* string) {
   struct Tuple token_delim = findLongestToken(START, string);
   TOKEN_TYPE type = getTokenTypeOf(token_delim.state);
   char* token_string = splitSringAfter(string, token_delim.depth);
+  char* rest_string = string + token_delim.depth;
 
   TOKEN token = {type, token_string};
   return token;  

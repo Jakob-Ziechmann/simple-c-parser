@@ -14,6 +14,7 @@ typedef enum {
 typedef struct {
   TOKEN_TYPE tokenType;
   char* token;
+  char* rest;
 } TOKEN;
 
 TOKEN nextToken(char* string);

@@ -1,41 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <wchar.h>
+#include <string.h>
 #include "fsm_lexer.h"
-
-
-typedef struct Ast Ast; // Forward reference
-
-struct Ast {
-    enum {
-        Ast_literal,
-        Ast_identifier,
-        Ast_not,
-        Ast_and,
-        Ast_or,
-        Ast_ri,
-        Ast_li,
-        Ast_eq,
-        Ast_empty
-    } tag;
-    union {
-        struct Ast_literal {char literal;} Ast_literal; //mistake
-        struct Ast_identifier { char identifier;} Ast_identifier;
-        struct Ast_not {Ast *right;} Ast_not;
-        struct Ast_and {Ast *left; Ast *right;} Ast_and;
-        struct Ast_or {Ast *left; Ast *right;} Ast_or;
-        struct Ast_li {Ast *left; Ast *right;} Ast_li;
-        struct Ast_ri {Ast *left; Ast *right;} Ast_ri;
-        struct Ast_eq {Ast *left; Ast *right;} Ast_eq;
-        struct Ast_empty {} Ast_empty;
-
-  } data;
-};
-
+#include "parse.h"
 
 typedef struct {
     Ast* tree;
     char* stringRest;
-} tokenConsume;
+} TOKEN_CONSUME;
 
 
 
@@ -48,20 +21,15 @@ Ast *ast_new(Ast ast) {
 #define AST_NEW(tag, ...) \
   ast_new((Ast){tag, {.tag=(struct tag){__VA_ARGS__}}})
 
+int isStringEq(char* string1, char* string2) {
+  return strcmp(string1, string2) == 0;
+}
 
 
 // forward declaration
 
-tokenConsume A(), NA(), start();
-
-//variable token
-
-TOKEN_TYPE x = IDENTIFIER;
-char* y = "123";
-
-
-TOKEN token;
-
+Ast* start(char* parseString);
+TOKEN_CONSUME A(char* parseString), NA(char* parseString);
 
 int isEmpty(Ast* ast){
     return ast->tag == Ast_empty;
@@ -70,103 +38,98 @@ int isEmpty(Ast* ast){
 
 // Start -> ( A ) | A IO A | PO A | L | ID
 
-tokenConsume start() {
-    if (token.tokenType == DELIMITER) {
-        if (!(isEmpty(A().tree))) {
-            if (token.tokenType == DELIMITER){
-                return ();
-            }
-        }
-    }
-    else if (A()){
-        if (token.tokenType == INFIX_OPRATOR){
-            if (A()){
-                return x;
-            }
-        }
-    }
-    else if (token.tokenType == PREFIX_OPERATOR) {
-        if (A()){
-            return x;
-        }
-    }
-    else if (token.tokenType == LITERAL){
-        return x;
-    } 
-    else if (token.tokenType == IDENTIFIER) {
-        return x;
-    }
-    else {
-        char* error = "Error";
-        Ast* empty = AST_NEW(Ast_empty, );
-        x = (empty, error);   //return empty tree
-        return x;
-    } 
+Ast* start(char* parseString) {
+  TOKEN curTok = nextToken(parseString);
+  int rest_empty = strlen(curTok.rest) == 0;
+  // terminal trees
+  if(curTok.tokenType == IDENTIFIER && rest_empty) {
+    Ast *id = AST_NEW(Ast_identifier, *curTok.token);
+    return id;
+  }
+
+  if(curTok.tokenType == LITERAL && rest_empty) {
+     Ast *literal = AST_NEW(Ast_literal_false);
+     if(*curTok.token == '0') literal = AST_NEW(Ast_literal_true);
+     return literal;
+  }
+  
+  // singular trees
+  TOKEN_CONSUME subtree = A(curTok.rest);
+  if(subtree.tree->tag == Ast_empty) {
+    return AST_NEW(Ast_empty);
+  }
+  
+  if(curTok.tokenType == PREFIX_OPERATOR) {
+    Ast *not = AST_NEW(Ast_not, subtree.tree);
+    return not;
+  }
+
+  if(curTok.tokenType == DELIMITER && *curTok.token == '(') {
+    TOKEN nextDelim = nextToken(subtree.stringRest);
+
+    if(nextDelim.tokenType != DELIMITER || *nextDelim.token != ')') return AST_NEW(Ast_empty);
+    if(strlen(nextDelim.rest) != 0) return AST_NEW(Ast_empty);
+    
+    return subtree.tree;
+  }
+
+  // double tree 
+  TOKEN_CONSUME leftSubtree = A(parseString);
+  TOKEN operator = nextToken(leftSubtree.stringRest);
+  TOKEN_CONSUME rightSubtree = A(operator.rest);
+
+  if(leftSubtree.tree->tag == Ast_empty || rightSubtree.tree->tag == Ast_empty) {
+    return AST_NEW(Ast_empty);
+  }
+
+  if(isStringEq(operator.token, "*")) {
+    Ast *and = AST_NEW(Ast_and, leftSubtree.tree, rightSubtree.tree);
+    return and;
+  }
+
+  if(isStringEq(operator.token, "+")) {
+    Ast *or = AST_NEW(Ast_or, leftSubtree.tree, rightSubtree.tree);
+    return or;
+  }
+
+  if(isStringEq(operator.token, "<=")) {
+    Ast *limp = AST_NEW(Ast_li, leftSubtree.tree, rightSubtree.tree);
+    return limp;
+  }
+  
+  if(isStringEq(operator.token, "=>")) {
+    Ast *rimp = AST_NEW(Ast_ri, leftSubtree.tree, rightSubtree.tree);
+    return rimp;
+  }
+
+  if(isStringEq(operator.token, "<=>")) {
+    Ast *eq = AST_NEW(Ast_eq, leftSubtree.tree, rightSubtree.tree);
+    return eq;
+  }
+
+  return AST_NEW(Ast_empty);
 }
 
 
 // A -> ( A ) N.A | PO A N.A | L N.A | ID N.A | ( A )
 
-tokenConsume A(void) {
-    if (token.tokenType == DELIMITER){
-        if (A()){
-            if (token.tokenType == DELIMITER){
-                if (NA()) {
-                    return 1;
-                }
-            }
-        }
-    }
-    else if (token.tokenType == PREFIX_OPERATOR){
-        if (A()){
-            if (NA()) {
-                return 1;
-            }
-        }
-    }
-    else if (token.tokenType == LITERAL) {
-        if (NA()) {
-            return 1;
-        }
-    }
-    else if (token.tokenType == IDENTIFIER) {
-        if (NA()) {
-            return 1;
-        }
-    }
-    else if (token.tokenType == DELIMITER) {
-        if (A()) {
-            if (token.tokenType == DELIMITER){
-                return 1;
-            }
-        }
-    }
-    else return 0; 
-
+TOKEN_CONSUME A(char* parseString) {
+  TOKEN_CONSUME nyi = {AST_NEW(Ast_empty), ""};
+  return nyi;
 }
 
 
 // N.A   -> IO A N.A | IO A
 
-tokenConsume NA(void) {
-    if (token.tokenType == INFIX_OPRATOR) {
-        if (A()) {
-            if (NA()) {
-                return 1;
-            }
-        }
-    }
-    else if (token.tokenType == INFIX_OPRATOR) {
-        if (A()) {
-            return 1;
-        }
-    }
-    else return 0;
+TOKEN_CONSUME NA(char* parseString) {
+  TOKEN_CONSUME nyi = {AST_NEW(Ast_empty), ""};
+  return nyi;
 }
 
 
 
 int main(void) {
-    TOKEN token = {x, y};
-    return EXIT_SUCCESS;
+  char* parseInput = "0";
+
+  return EXIT_SUCCESS;
 }
