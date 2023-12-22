@@ -171,8 +171,7 @@ TOKEN_CONSUME A(char* parseString) {
 
     default: break;
   }
-
-  return error;
+  return naResult;
 }
 
 
