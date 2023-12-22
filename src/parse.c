@@ -106,16 +106,50 @@ Ast* start(char* parseString) {
 // A -> ( A ) N.A | PO A N.A | L N.A | ID N.A | ( A )
 
 TOKEN_CONSUME A(char* parseString) {
-  TOKEN_CONSUME nyi = {AST_NEW(Ast_empty), ""};
-  return nyi;
+  TOKEN curTok = nextToken(parseString);
+  int rest_empty = (strlen(curTok.rest) == 0);
+
+  TOKEN_CONSUME subtree = A(curTok.rest);
+  TOKEN_CONSUME result = {AST_NEW(Ast_empty), ""};
+
+  if(curTok.tokenType == DELIMITER && *curTok.token == '(') {
+    TOKEN nextDelim = nextToken(subtree.stringRest);
+
+    if(nextDelim.tokenType != DELIMITER || *nextDelim.token != ')') return result;
+
+    if(strlen(nextDelim.rest) != 0) return result;
+
+    return subtree.tree; 
+  }
+
+  //TOKEN_CONSUME nyi = {AST_NEW(Ast_empty), ""};
+  //return nyi;
 }
 
 
 // N.A   -> IO A N.A | IO A
 
+/*  if IO 
+      if A
+        if NA
+          return tree
+    if Io
+      if A
+        return tree
+  */
+
 TOKEN_CONSUME NA(char* parseString) {
-  TOKEN_CONSUME nyi = {AST_NEW(Ast_empty), ""};
-  return nyi;
+
+  TOKEN curTok = nextToken(parseString);
+  Ast* subtree = AST_NEW(Ast_empty);
+
+  if(curTok.tokenType == INFIX_OPRATOR) {
+    subtree
+  }
+
+  //if(curTok.tokenType == INFIX_OPRATOR)
+  /*TOKEN_CONSUME nyi = {AST_NEW(Ast_empty), ""};
+  return nyi; */
 }
 
 
