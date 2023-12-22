@@ -174,8 +174,7 @@ TOKEN_CONSUME A(char *parseString) {
   default:
     break;
   }
-
-  return error;
+  return naResult;
 }
 
 // N.A   -> IO A N.A | epsilon
