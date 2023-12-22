@@ -207,7 +207,3 @@ char* tokenToStr(TOKEN token) {
 
   return destination;
 }
-
-// int main(void) {
-//   printAllTokens("t=>q*r");
-// }

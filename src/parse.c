@@ -3,6 +3,7 @@
 #include <wchar.h>
 #include <string.h>
 #include "fsm_lexer.h"
+#include "tree.h"
 #include "parse.h"
 
 typedef struct {
@@ -20,6 +21,7 @@ int isStringEq(char* string1, char* string2) {
 Ast* start(char* parseString);
 TOKEN_CONSUME A(char* parseString), NA(char* parseString);
 
+
 Ast* parseString(char* string){ 
   return start(string);
 }
@@ -27,12 +29,9 @@ Ast* parseString(char* string){
 // Start -> ( A ) | A IO A | PO A | L | ID
 
 Ast* start(char* parseString) {
-  printf("stared parsing\n");
-
   TOKEN curTok = nextToken(parseString);
   int rest_empty = (strlen(curTok.rest) == 0);
 
-  printf("first token: %s\n", tokenToStr(curTok));
   // terminal trees
   if(curTok.tokenType == IDENTIFIER && rest_empty) {
     Ast *id = AST_NEW(Ast_identifier, curTok.token);
@@ -102,32 +101,58 @@ Ast* start(char* parseString) {
   return AST_NEW(Ast_empty);
 }
 
-
-// A -> ( A ) N.A | PO A N.A | L N.A | ID N.A | ( A )
+// A -> ( A ) N.A | PO A N.A | L N.A | ID N.A
 
 TOKEN_CONSUME A(char* parseString) {
   TOKEN curTok = nextToken(parseString);
-  int rest_empty = (strlen(curTok.rest) == 0);
+  Ast *subtree = AST_NEW(Ast_empty);
+  char* rest = "";
+  TOKEN_CONSUME error = {subtree, parseString};
 
-  TOKEN_CONSUME subtree = A(curTok.rest);
-  TOKEN_CONSUME result = {AST_NEW(Ast_empty), ""};
-
-  if(curTok.tokenType == DELIMITER && *curTok.token == '(') {
-    TOKEN nextDelim = nextToken(subtree.stringRest);
-
-    if(nextDelim.tokenType != DELIMITER || *nextDelim.token != ')') return result;
-
-    if(strlen(nextDelim.rest) != 0) return result;
-
-    return subtree.tree; 
+  if(curTok.tokenType == IDENTIFIER) {
+    subtree = AST_NEW(Ast_identifier, curTok.token);
+    rest = curTok.rest;
   }
 
-  //TOKEN_CONSUME nyi = {AST_NEW(Ast_empty), ""};
-  //return nyi;
+  if(curTok.tokenType == LITERAL) {
+    if(*curTok.token == '0') {
+      subtree = AST_NEW(Ast_literal_false);
+    } else {
+      subtree = AST_NEW(Ast_literal_true);
+    }
+    rest = curTok.rest;
+  }
+
+  if(curTok.tokenType == PREFIX_OPERATOR) {
+    TOKEN_CONSUME aResSubtree = A(curTok.rest);
+    subtree = AST_NEW(Ast_not, aResSubtree.tree);
+    rest = aResSubtree.stringRest;
+  }
+
+  if(curTok.tokenType == DELIMITER && *curTok.token == '(') {
+    TOKEN_CONSUME aResSubtree = A(curTok.rest);
+    TOKEN nextDelim = nextToken(aResSubtree.stringRest);
+    
+    if(nextDelim.tokenType != DELIMITER || *nextDelim.token != ')') return error;
+    // if(strlen(nextDelim.rest) != 0) return error;
+
+    subtree = aResSubtree.tree;
+    rest = aResSubtree.stringRest;
+  }
+
+  TOKEN_CONSUME naResult = NA(rest);
+  if(naResult.tree->tag == Ast_empty) {
+    TOKEN_CONSUME result = {subtree, rest};
+    return result;
+  }
+
+
+  TOKEN_CONSUME nyi = {AST_NEW(Ast_empty), ""};
+  return nyi;
 }
 
 
-// N.A   -> IO A N.A | IO A
+// N.A   -> IO A N.A | IO A | epsilon
 
 /*  if IO 
       if A
@@ -141,15 +166,21 @@ TOKEN_CONSUME A(char* parseString) {
 TOKEN_CONSUME NA(char* parseString) {
 
   TOKEN curTok = nextToken(parseString);
-  Ast* subtree = AST_NEW(Ast_empty);
+  Ast *subtree = AST_NEW(Ast_empty);
+  char* rest = "";
+  TOKEN_CONSUME error = {subtree, parseString};
 
   if(curTok.tokenType == INFIX_OPRATOR) {
-    subtree
+    rest = curTok.rest;
+    TOKEN_CONSUME rightSubtree = A(rest);
+    if(rightSubtree.tree->tag != Ast_empty) {
+      return
+    }
+       
   }
 
-  //if(curTok.tokenType == INFIX_OPRATOR)
-  /*TOKEN_CONSUME nyi = {AST_NEW(Ast_empty), ""};
-  return nyi; */
+  TOKEN_CONSUME nyi = {AST_NEW(Ast_empty), parseString};
+  return nyi;
 }
 
 

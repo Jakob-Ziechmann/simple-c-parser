@@ -8,12 +8,11 @@
 
 int main(void){
 
-  Ast* term = 
-    AST_NEW(Ast_and, AST_NEW(Ast_identifier, "y"), AST_NEW(Ast_identifier, "p"));
-  ast_print(term);
+  // Ast* term = 
+  //   AST_NEW(Ast_and, AST_NEW(Ast_identifier, "y"), AST_NEW(Ast_identifier, "p"));
+  // ast_print(term);
 
-  printf("pre parsing");
-  char* test = "";
+  char* test = "(!abc)";
   Ast* parsedString = parseString(test);
 
 
