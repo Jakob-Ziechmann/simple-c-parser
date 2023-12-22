@@ -86,7 +86,7 @@ void ast_print(Ast* ptr){
 
     case Ast_empty: {
       struct Ast_empty data = ast.data.Ast_empty;
-      printf("");
+      printf("empty");
     }
     break;
   }
