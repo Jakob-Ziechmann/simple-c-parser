@@ -154,14 +154,6 @@ TOKEN_CONSUME A(char* parseString) {
 
 // N.A   -> IO A N.A | IO A | epsilon
 
-/*  if IO 
-      if A
-        if NA
-          return tree
-    if Io
-      if A
-        return tree
-  */
 
 TOKEN_CONSUME NA(char* parseString) {
 
@@ -169,19 +161,38 @@ TOKEN_CONSUME NA(char* parseString) {
   Ast *subtree = AST_NEW(Ast_empty);
   char* rest = "";
   TOKEN_CONSUME error = {subtree, parseString};
+  TOKEN_CONSUME result = {AST_NEW(Ast_empty)};
 
   if(curTok.tokenType == INFIX_OPRATOR) {
-    rest = curTok.rest;
-    TOKEN_CONSUME rightSubtree = A(rest);
-    if(rightSubtree.tree->tag != Ast_empty) {
-      return
+    if(A(curTok.token).tree->tag != Ast_empty){
+      
+      if(strcmp(curTok.token, "<=>") == 0) {
+      result.tree = AST_NEW(Ast_eq);
+      }
+      if(strcmp(curTok.token, "<=") == 0) {
+        result.tree = AST_NEW(Ast_li);
+      }
+      if(strcmp(curTok.token, "=>") == 0) {
+        result.tree = AST_NEW(Ast_ri);
+      }
+      if(strcmp(curTok.token, "+") == 0) {
+        result.tree = AST_NEW(Ast_or);
+      }
+      if(strcmp(curTok.token, "*") == 0) {
+        result.tree = AST_NEW(Ast_and);
+      }
+      else {
+        result.tree = AST_NEW(Ast_empty);
+      }
     }
-       
+    }
+    result.stringRest = curTok.rest;
+    return result; 
+    /*TOKEN_CONSUME nyi = {AST_NEW(Ast_empty), parseString};
+    return nyi; */   
   }
 
-  TOKEN_CONSUME nyi = {AST_NEW(Ast_empty), parseString};
-  return nyi;
-}
+  
 
 
 
