@@ -58,7 +58,8 @@ Ast* start(char* parseString) {
   if(curTok.tokenType == DELIMITER && *curTok.token == '(') {
     TOKEN nextDelim = nextToken(subtree.stringRest);
 
-    if(nextDelim.tokenType != DELIMITER || *nextDelim.token != ')') return AST_NEW(Ast_empty);
+    if(nextDelim.tokenType != DELIMITER) return AST_NEW(Ast_empty);
+    if(*nextDelim.token != ')') return AST_NEW(Ast_empty);
     if(strlen(nextDelim.rest) != 0) return AST_NEW(Ast_empty);
     
     return subtree.tree;
@@ -137,7 +138,7 @@ TOKEN_CONSUME A(char* parseString) {
     // if(strlen(nextDelim.rest) != 0) return error;
 
     subtree = aResSubtree.tree;
-    rest = aResSubtree.stringRest;
+    rest = nextDelim.rest;
   }
 
   TOKEN_CONSUME naResult = NA(rest);
@@ -146,9 +147,32 @@ TOKEN_CONSUME A(char* parseString) {
     return result;
   }
 
+  Ast *natree = naResult.tree;
+  switch (natree->tag) {
+    case(Ast_and):
+      natree->data.Ast_and.left = subtree;
+      break;
 
-  TOKEN_CONSUME nyi = {AST_NEW(Ast_empty), ""};
-  return nyi;
+    case(Ast_or):
+      natree->data.Ast_or.left = subtree;
+      break;
+
+    case(Ast_li):
+      natree->data.Ast_li.left = subtree;
+      break;
+
+    case(Ast_ri):
+      natree->data.Ast_ri.left = subtree;
+      break;
+
+    case(Ast_eq):
+      natree->data.Ast_eq.left = subtree;
+      break;
+
+    default: break;
+  }
+
+  return error;
 }
 
 
