@@ -12,7 +12,7 @@ int main(void){
   //   AST_NEW(Ast_and, AST_NEW(Ast_identifier, "y"), AST_NEW(Ast_identifier, "p"));
   // ast_print(term);
 
-  char* test = "((!abc))";
+  char* test = "(a+b)=>c";
   Ast* parsedString = parseString(test);
 
 

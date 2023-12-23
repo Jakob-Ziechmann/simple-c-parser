@@ -43,27 +43,26 @@ Ast *start(char *parseString) {
 
   // singular trees
   TOKEN_CONSUME subtree = A(curTok.rest);
-  if (subtree.tree->tag == Ast_empty) {
-    return AST_NEW(Ast_empty);
+  if (subtree.tree->tag != Ast_empty) {
+    if (curTok.tokenType == PREFIX_OPERATOR) {
+      Ast *not = AST_NEW(Ast_not, subtree.tree);
+      return not ;
+    }
+
+    if (curTok.tokenType == DELIMITER && *curTok.token == '(') {
+      TOKEN nextDelim = nextToken(subtree.stringRest);
+
+      if (nextDelim.tokenType != DELIMITER)
+        return AST_NEW(Ast_empty);
+      if (*nextDelim.token != ')')
+        return AST_NEW(Ast_empty);
+      if (strlen(nextDelim.rest) != 0)
+        return AST_NEW(Ast_empty);
+
+      return subtree.tree;
+    }
   }
 
-  if (curTok.tokenType == PREFIX_OPERATOR) {
-    Ast *not = AST_NEW(Ast_not, subtree.tree);
-    return not ;
-  }
-
-  if (curTok.tokenType == DELIMITER && *curTok.token == '(') {
-    TOKEN nextDelim = nextToken(subtree.stringRest);
-
-    if (nextDelim.tokenType != DELIMITER)
-      return AST_NEW(Ast_empty);
-    if (*nextDelim.token != ')')
-      return AST_NEW(Ast_empty);
-    if (strlen(nextDelim.rest) != 0)
-      return AST_NEW(Ast_empty);
-
-    return subtree.tree;
-  }
 
   // double tree
   TOKEN_CONSUME leftSubtree = A(parseString);
@@ -76,11 +75,13 @@ Ast *start(char *parseString) {
   }
 
   if (isStringEq(operator.token, "*")) {
+    printf("and\n");
     Ast *and = AST_NEW(Ast_and, leftSubtree.tree, rightSubtree.tree);
     return and;
   }
 
   if (isStringEq(operator.token, "+")) {
+    printf("or\n");
     Ast * or = AST_NEW(Ast_or, leftSubtree.tree, rightSubtree.tree);
     return or ;
   }
@@ -106,6 +107,7 @@ Ast *start(char *parseString) {
 // A -> ( A ) N.A | PO A N.A | L N.A | ID N.A
 
 TOKEN_CONSUME A(char *parseString) {
+  printf("parseString = %s\n", parseString);
   TOKEN curTok = nextToken(parseString);
   Ast *subtree = AST_NEW(Ast_empty);
   char *rest = "";
@@ -144,6 +146,8 @@ TOKEN_CONSUME A(char *parseString) {
   }
 
   TOKEN_CONSUME naResult = NA(rest);
+  printf("\nNEW NA RES\n");
+  ast_print(naResult.tree);
   if (naResult.tree->tag == Ast_empty) {
     TOKEN_CONSUME result = {subtree, rest};
     return result;
@@ -164,7 +168,10 @@ TOKEN_CONSUME A(char *parseString) {
     break;
 
   case (Ast_ri):
+    printf("\nrimp\n");
+    ast_print(natree);
     natree->data.Ast_ri.left = subtree;
+    ast_print(natree);
     break;
 
   case (Ast_eq):
@@ -180,8 +187,8 @@ TOKEN_CONSUME A(char *parseString) {
 // N.A   -> IO A N.A | epsilon
 
 TOKEN_CONSUME NA(char *parseString) {
-
   TOKEN curTok = nextToken(parseString);
+  Ast *emptyTree = AST_NEW(Ast_empty);
   Ast *subtree = AST_NEW(Ast_empty);
   char *rest = "";
   TOKEN_CONSUME error = {subtree, parseString};
@@ -191,7 +198,6 @@ TOKEN_CONSUME NA(char *parseString) {
     return error;
   }
 
-  Ast *emptyTree = AST_NEW(Ast_empty);
 
   if (curTok.tokenType == INFIX_OPRATOR) {
     TOKEN_CONSUME subtreeA = A(curTok.rest);
@@ -211,8 +217,6 @@ TOKEN_CONSUME NA(char *parseString) {
     }
     if (strcmp(curTok.token, "*") == 0) {
       subtree = AST_NEW(Ast_and, emptyTree, subtreeA.tree);
-    } else {
-      subtree = AST_NEW(Ast_empty);
     }
   }
 
