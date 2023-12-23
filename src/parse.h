@@ -4,6 +4,6 @@
 #ifndef PARSE_H
 #define PARSE_H
 
-Ast* parseString(char* string);
+void test();
 
 #endif // !PARSE_H

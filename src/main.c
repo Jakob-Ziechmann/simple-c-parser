@@ -2,22 +2,21 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-#include "parse.h"
+// #include "parse.h"
+#include "token.h"
 #include "tree.h"
+#include "lexer.h"
 
 
 int main(void){
 
-  // Ast* term = 
-  //   AST_NEW(Ast_and, AST_NEW(Ast_identifier, "y"), AST_NEW(Ast_identifier, "p"));
-  // ast_print(term);
-
-  char* test = "(a+b)=>c";
-  Ast* parsedString = parseString(test);
+  LEXER *lexer = createLexer("abc + => ( hallo )");
 
 
-  ast_print(parsedString);
-  printf("\n");
-  
+  while (!inputIsRead(lexer)) {
+    TOKEN token = nextToken(lexer);
+    printToken(&token);
+  }
+
   return EXIT_SUCCESS;
 }
