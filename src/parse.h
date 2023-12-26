@@ -14,6 +14,6 @@ typedef struct {
 
 
 PARSER* createParser(LEXER* lexer);
-Ast* parseExpression(PARSER* parser);
+Ast* parseExpression(PARSER* parser, int precedence);
 
 #endif // !PARSE_H

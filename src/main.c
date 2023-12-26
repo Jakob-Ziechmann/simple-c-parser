@@ -9,10 +9,10 @@
 
 int main(void){
 
-  LEXER* lexer = createLexer("!1");
+  LEXER* lexer = createLexer("vara + varb * varc => abc");
   PARSER* parser = createParser(lexer);
 
-  Ast* parseTree = parseExpression(parser);
+  Ast* parseTree = parseExpression(parser, 0);
   ast_print(parseTree);
 
   return EXIT_SUCCESS;

@@ -2,6 +2,7 @@
 #include "token.h"
 #include "tree.h"
 #include "lexer.h"
+#include <iso646.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -31,10 +32,10 @@ void consumeToken(PARSER* parser) {
 
 int checkParsePrefix(TOKEN* token) {
   switch (token->type) {
-    case(Identifier):;
-    case(BoolTrue):;
-    case(BoolFalse):;
-    case(Not):;
+    case(Identifier):
+    case(BoolTrue):
+    case(BoolFalse):
+    case(Not):
 
     break;
     default: return 0;
@@ -44,6 +45,13 @@ int checkParsePrefix(TOKEN* token) {
 
 int checkParseInfix(TOKEN* token) {
   switch (token->type) {
+    case(And):
+    case(Or):
+    case(LeftImplication):
+    case(RightImplication):
+    case(Equivalece):
+
+    break;
     default: return 0;
   }
   return 1;
@@ -58,10 +66,6 @@ Ast* parsePrefix(PARSER* parser) {
 
     default:;
   }
-  return AST_NEW(Ast_empty);
-}
-
-Ast* parseInfix(PARSER* parser) {
   return AST_NEW(Ast_empty);
 }
 
@@ -97,18 +101,70 @@ Ast* parseNot(PARSER* parser) {
   if(notToken.type != Not) return AST_NEW(Ast_empty);
 
   consumeToken(parser);
-  Ast* rightTree = parseExpression(parser);
+  Ast* rightTree = parseExpression(parser, 0);
   return AST_NEW(Ast_not, rightTree);
 }
 
-//Parser
-Ast* parseExpression(PARSER* parser) {
-  int validPrefix = checkParsePrefix(parser->currentToken);
-  int valigInfix = checkParseInfix(parser->currentToken);
+int precedence(TOKEN* token) {
+  switch (token->type) {
+    case(Not): return 4;
+    case(And): return 3;
+    case(Or): return 2;
+    case(LeftImplication): return 1;
+    case(RightImplication): return 1;
+    case(Equivalece): return 1;
+    default: return 0;
+  }
+}
 
-  if(validPrefix) {
-    return parsePrefix(parser);
+Ast* parseInfix(PARSER* parser, Ast* left) {
+  printf("---parse infix---\n");
+  ast_print(left);
+  printf("\n");
+
+  TOKEN operator = *parser->currentToken;
+  printToken(&operator);
+  int prec = precedence(&operator);
+  printf("precedence = %d\n", prec);
+
+  consumeToken(parser);
+
+  Ast* right = parseExpression(parser, prec);
+
+  switch (operator.type) {
+    case(And): return AST_NEW(Ast_and, left, right);
+    case(Or): return AST_NEW(Ast_or, left, right);
+    case(LeftImplication): return AST_NEW(Ast_li, left, right);
+    case(RightImplication): return AST_NEW(Ast_ri, left, right);
+    case(Equivalece): return AST_NEW(Ast_eq, left, right);
+    default: return AST_NEW(Ast_empty);
+  }
+}
+
+//Parser
+Ast* parseExpression(PARSER* parser, int prec) {
+  int validPrefix = checkParsePrefix(parser->currentToken);
+
+  if(!validPrefix) {
+    return AST_NEW(Ast_empty);
   }
 
-  return AST_NEW(Ast_empty);
+  Ast* leftExpression = parsePrefix(parser);
+
+  printToken(parser->nextToken);
+  printf("prec = %d\n", prec);
+  printf("precedence(parser->currentToken) = %d\n", precedence(parser->currentToken));
+
+  while(parser->nextToken->type != Invalid && prec < precedence(parser->currentToken)) {
+    int validInfix = checkParseInfix(parser->currentToken);
+
+    if(!validInfix) {
+      return AST_NEW(Ast_empty);
+    }
+
+    leftExpression = parseInfix(parser, leftExpression);
+    
+  }
+
+  return leftExpression;
 }
