@@ -24,6 +24,7 @@ typedef struct {
   char* content;
 } TOKEN;
 
+TOKEN* createToken(TOKEN_TYPE type, char* content);
 void printToken(TOKEN* token);
 char* tokenToStr(TOKEN* token);
 

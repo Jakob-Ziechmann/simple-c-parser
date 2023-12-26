@@ -10,7 +10,7 @@ typedef struct {
 } LEXER;
 
 LEXER* createLexer(char* input);
-TOKEN nextToken(LEXER* lexer);
+TOKEN* nextToken(LEXER* lexer);
 int inputIsRead(LEXER* lexer);
 
 #endif // !LEXER_H

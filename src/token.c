@@ -4,11 +4,20 @@
 #include <string.h>
 #include <stdio.h>
 
+
+TOKEN* createToken(TOKEN_TYPE type, char* content) {
+  TOKEN newToken = {type, content};
+  TOKEN *ptr = malloc(sizeof(newToken));
+  *ptr = newToken;
+  return ptr;
+}
+
 int isValid(TOKEN *token) {
   return token->type != Invalid;
 }
 
 char* tokenToStr(TOKEN *token) {
+  if(token == NULL) return "NULL TOKEN";
   switch (token->type) {
     case(Identifier): {
       char* desc = "Identifier: ";

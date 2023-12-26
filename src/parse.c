@@ -1,52 +1,114 @@
 #include "parse.h"
+#include "token.h"
 #include "tree.h"
+#include "lexer.h"
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef struct {
-  enum {
-    PARSE_RESULT,
-    PARSE_ERROR,
-  } type;
-  union {
-    struct PARSE_RESULT {Ast* parsetree; char* restString;} PARSE_RESULT;
-    struct PARSE_ERROR {} PARSE_ERROR;
-  } data;
-} OPTIONAL_PARSE;
+void consumeToken(PARSER* parser);
 
-OPTIONAL_PARSE* new_opt_parse(OPTIONAL_PARSE optional_parse);
+PARSER* createParser(LEXER* lexer) {
+  PARSER newParser = {lexer, NULL, NULL};
 
-OPTIONAL_PARSE* new_opt_parse(OPTIONAL_PARSE optional_parse) {
-  OPTIONAL_PARSE *ptr = malloc(sizeof(OPTIONAL_PARSE));
-  if (ptr) *ptr = optional_parse;
+  PARSER *ptr = malloc(sizeof(newParser));
+  *ptr = newParser;
+
+  consumeToken(ptr);
+  consumeToken(ptr);
+
   return ptr;
 }
 
-#define NEW_OPT_PARSE(type, ...) \
-  new_opt_parse((OPTIONAL_PARSE){type, {.type=(struct type){__VA_ARGS__}}})
+Ast* parseIdentifier(PARSER* parser);
+Ast* parseBoolean(PARSER* parser);
+Ast* parseNot(PARSER* parser);
 
-int hasResult(OPTIONAL_PARSE *opt_parse) {
-  return opt_parse->type == PARSE_RESULT;
+void consumeToken(PARSER* parser) {
+  parser->currentToken = parser->nextToken;
+  parser->nextToken = nextToken(parser->lexer);
 }
 
-Ast* getAst(OPTIONAL_PARSE *opt_parse) {
-  return opt_parse->data.PARSE_RESULT.parsetree;
+
+int checkParsePrefix(TOKEN* token) {
+  switch (token->type) {
+    case(Identifier):;
+    case(BoolTrue):;
+    case(BoolFalse):;
+    case(Not):;
+
+    break;
+    default: return 0;
+  }
+  return 1;
 }
 
-Ast* getAstSafe(OPTIONAL_PARSE *opt_parse) {
-  if (hasResult(opt_parse)) return getAst(opt_parse);
+int checkParseInfix(TOKEN* token) {
+  switch (token->type) {
+    default: return 0;
+  }
+  return 1;
+}
+
+Ast* parsePrefix(PARSER* parser) {
+  switch (parser->currentToken->type) {
+    case(Identifier): return parseIdentifier(parser);
+    case(BoolTrue):
+    case(BoolFalse): return parseBoolean(parser);
+    case(Not): return parseNot(parser);
+
+    default:;
+  }
   return AST_NEW(Ast_empty);
 }
 
-char* getRestString(OPTIONAL_PARSE *opt_parse) {
-  return opt_parse->data.PARSE_RESULT.restString;
+Ast* parseInfix(PARSER* parser) {
+  return AST_NEW(Ast_empty);
 }
 
-char* getRestStringSafe(OPTIONAL_PARSE *opt_parse) {
-  if (hasResult(opt_parse)) return getRestString(opt_parse);
-  return "";
+Ast* parseIdentifier(PARSER* parser) {
+  TOKEN *idToken = parser->currentToken;
+  if(idToken->type != Identifier) return AST_NEW(Ast_empty);
+
+  Ast* identifier = AST_NEW(Ast_identifier, idToken->content);
+  consumeToken(parser);
+  return identifier;
 }
 
-void test() {
-  OPTIONAL_PARSE* newvar = NEW_OPT_PARSE(PARSE_ERROR);
+Ast* parseBoolean(PARSER* parser) {
+  TOKEN* boolToken = parser->currentToken;
+
+  Ast* boolTree;
+  switch (boolToken->type) {
+    case(BoolTrue):
+      boolTree = AST_NEW(Ast_literal_true);
+      break;
+    case(BoolFalse): 
+      boolTree = AST_NEW(Ast_literal_false);
+      break;
+    default: return AST_NEW(Ast_empty);
+  }
+
+  consumeToken(parser);
+  return boolTree;
+}
+
+Ast* parseNot(PARSER* parser) {
+  TOKEN notToken = *parser->currentToken;
+  if(notToken.type != Not) return AST_NEW(Ast_empty);
+
+  consumeToken(parser);
+  Ast* rightTree = parseExpression(parser);
+  return AST_NEW(Ast_not, rightTree);
+}
+
+//Parser
+Ast* parseExpression(PARSER* parser) {
+  int validPrefix = checkParsePrefix(parser->currentToken);
+  int valigInfix = checkParseInfix(parser->currentToken);
+
+  if(validPrefix) {
+    return parsePrefix(parser);
+  }
+
+  return AST_NEW(Ast_empty);
 }

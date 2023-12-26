@@ -1,8 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <ctype.h>
-// #include "parse.h"
+#include "parse.h"
 #include "token.h"
 #include "tree.h"
 #include "lexer.h"
@@ -10,13 +9,11 @@
 
 int main(void){
 
-  LEXER *lexer = createLexer("abc + => ( hallo )");
+  LEXER* lexer = createLexer("!1");
+  PARSER* parser = createParser(lexer);
 
-
-  while (!inputIsRead(lexer)) {
-    TOKEN token = nextToken(lexer);
-    printToken(&token);
-  }
+  Ast* parseTree = parseExpression(parser);
+  ast_print(parseTree);
 
   return EXIT_SUCCESS;
 }

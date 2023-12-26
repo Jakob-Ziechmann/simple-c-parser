@@ -59,7 +59,7 @@ char* readIdentifier(LEXER *lexer) {
   return out;
 }
 
-TOKEN nextToken(LEXER* lexer) {
+TOKEN prePtrNextToken(LEXER* lexer) {
   skipWhiteSpace(lexer);
   TOKEN invalid = {Invalid, ""};
   if(inputIsRead(lexer)) return invalid;
@@ -136,3 +136,7 @@ TOKEN nextToken(LEXER* lexer) {
   return invalid;
 }
 
+TOKEN* nextToken(LEXER* lexer) {
+  TOKEN token = prePtrNextToken(lexer);
+  return createToken(token.type, token.content);
+}
