@@ -9,11 +9,7 @@
 
 int main(void){
 
-  LEXER* lexer = createLexer("vara + varb * varc => abc");
-  PARSER* parser = createParser(lexer);
-
-  Ast* parseTree = parseExpression(parser, 0);
-  ast_print(parseTree);
+  ast_print(parse("(ab => c) * (0 => ab + d)"));
 
   return EXIT_SUCCESS;
 }

@@ -23,6 +23,7 @@ PARSER* createParser(LEXER* lexer) {
 Ast* parseIdentifier(PARSER* parser);
 Ast* parseBoolean(PARSER* parser);
 Ast* parseNot(PARSER* parser);
+Ast* parseGroup(PARSER* parser);
 
 void consumeToken(PARSER* parser) {
   parser->currentToken = parser->nextToken;
@@ -36,6 +37,7 @@ int checkParsePrefix(TOKEN* token) {
     case(BoolTrue):
     case(BoolFalse):
     case(Not):
+    case(LeftParen):
 
     break;
     default: return 0;
@@ -63,6 +65,7 @@ Ast* parsePrefix(PARSER* parser) {
     case(BoolTrue):
     case(BoolFalse): return parseBoolean(parser);
     case(Not): return parseNot(parser);
+    case(LeftParen): return parseGroup(parser);
 
     default:;
   }
@@ -105,6 +108,21 @@ Ast* parseNot(PARSER* parser) {
   return AST_NEW(Ast_not, rightTree);
 }
 
+Ast* parseGroup(PARSER* parser) {
+  consumeToken(parser);
+
+  Ast* expression = parseExpression(parser, 0);
+
+  if(parser->currentToken->type != RightParen) {
+    return AST_NEW(Ast_empty);
+  }
+
+  consumeToken(parser);
+
+  return expression;
+
+}
+
 int precedence(TOKEN* token) {
   switch (token->type) {
     case(Not): return 4;
@@ -118,14 +136,8 @@ int precedence(TOKEN* token) {
 }
 
 Ast* parseInfix(PARSER* parser, Ast* left) {
-  printf("---parse infix---\n");
-  ast_print(left);
-  printf("\n");
-
   TOKEN operator = *parser->currentToken;
-  printToken(&operator);
   int prec = precedence(&operator);
-  printf("precedence = %d\n", prec);
 
   consumeToken(parser);
 
@@ -151,9 +163,6 @@ Ast* parseExpression(PARSER* parser, int prec) {
 
   Ast* leftExpression = parsePrefix(parser);
 
-  printToken(parser->nextToken);
-  printf("prec = %d\n", prec);
-  printf("precedence(parser->currentToken) = %d\n", precedence(parser->currentToken));
 
   while(parser->nextToken->type != Invalid && prec < precedence(parser->currentToken)) {
     int validInfix = checkParseInfix(parser->currentToken);
@@ -167,4 +176,13 @@ Ast* parseExpression(PARSER* parser, int prec) {
   }
 
   return leftExpression;
+}
+
+Ast* parse(char* input) {
+  printf("parsing: %s ...\n", input);
+
+  LEXER* lexer = createLexer(input);
+  PARSER* parser = createParser(lexer);
+
+  return parseExpression(parser, 0);
 }
