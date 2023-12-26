@@ -1,172 +1,188 @@
+#include "parse.h"
+#include "token.h"
+#include "tree.h"
+#include "lexer.h"
+#include <iso646.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "fsm_lexer.h"
 
+void consumeToken(PARSER* parser);
 
-typedef struct Ast Ast; // Forward reference
+PARSER* createParser(LEXER* lexer) {
+  PARSER newParser = {lexer, NULL, NULL};
 
-struct Ast {
-    enum {
-        Ast_literal,
-        Ast_identifier,
-        Ast_not,
-        Ast_and,
-        Ast_or,
-        Ast_ri,
-        Ast_li,
-        Ast_eq,
-        Ast_empty
-    } tag;
-    union {
-        struct Ast_literal {char literal;} Ast_literal; //mistake
-        struct Ast_identifier { char identifier;} Ast_identifier;
-        struct Ast_not {Ast *right;} Ast_not;
-        struct Ast_and {Ast *left; Ast *right;} Ast_and;
-        struct Ast_or {Ast *left; Ast *right;} Ast_or;
-        struct Ast_li {Ast *left; Ast *right;} Ast_li;
-        struct Ast_ri {Ast *left; Ast *right;} Ast_ri;
-        struct Ast_eq {Ast *left; Ast *right;} Ast_eq;
-        struct Ast_empty {} Ast_empty;
+  PARSER *ptr = malloc(sizeof(newParser));
+  *ptr = newParser;
 
-  } data;
-};
+  consumeToken(ptr);
+  consumeToken(ptr);
 
-
-typedef struct {
-    Ast* tree;
-    char* stringRest;
-} tokenConsume;
-
-
-
-Ast *ast_new(Ast ast) {
-  Ast *ptr = malloc(sizeof(Ast));
-  if (ptr) *ptr = ast;
   return ptr;
 }
 
-#define AST_NEW(tag, ...) \
-  ast_new((Ast){tag, {.tag=(struct tag){__VA_ARGS__}}})
+Ast* parseIdentifier(PARSER* parser);
+Ast* parseBoolean(PARSER* parser);
+Ast* parseNot(PARSER* parser);
+Ast* parseGroup(PARSER* parser);
 
-
-
-// forward declaration
-
-tokenConsume A(), NA(), start();
-
-//variable token
-
-TOKEN_TYPE x = IDENTIFIER;
-char* y = "123";
-
-
-TOKEN token;
-
-
-int isEmpty(Ast* ast){
-    return ast->tag == Ast_empty;
+void consumeToken(PARSER* parser) {
+  parser->currentToken = parser->nextToken;
+  parser->nextToken = nextToken(parser->lexer);
 }
 
 
-// Start -> ( A ) | A IO A | PO A | L | ID
+int checkParsePrefix(TOKEN* token) {
+  switch (token->type) {
+    case(Identifier):
+    case(BoolTrue):
+    case(BoolFalse):
+    case(Not):
+    case(LeftParen):
 
-tokenConsume start() {
-    if (token.tokenType == DELIMITER) {
-        if (!(isEmpty(A().tree))) {
-            if (token.tokenType == DELIMITER){
-                return ();
-            }
-        }
-    }
-    else if (A()){
-        if (token.tokenType == INFIX_OPRATOR){
-            if (A()){
-                return x;
-            }
-        }
-    }
-    else if (token.tokenType == PREFIX_OPERATOR) {
-        if (A()){
-            return x;
-        }
-    }
-    else if (token.tokenType == LITERAL){
-        return x;
-    } 
-    else if (token.tokenType == IDENTIFIER) {
-        return x;
-    }
-    else {
-        char* error = "Error";
-        Ast* empty = AST_NEW(Ast_empty, );
-        x = (empty, error);   //return empty tree
-        return x;
-    } 
+    break;
+    default: return 0;
+  }
+  return 1;
 }
 
+int checkParseInfix(TOKEN* token) {
+  switch (token->type) {
+    case(And):
+    case(Or):
+    case(LeftImplication):
+    case(RightImplication):
+    case(Equivalece):
 
-// A -> ( A ) N.A | PO A N.A | L N.A | ID N.A | ( A )
+    break;
+    default: return 0;
+  }
+  return 1;
+}
 
-tokenConsume A(void) {
-    if (token.tokenType == DELIMITER){
-        if (A()){
-            if (token.tokenType == DELIMITER){
-                if (NA()) {
-                    return 1;
-                }
-            }
-        }
-    }
-    else if (token.tokenType == PREFIX_OPERATOR){
-        if (A()){
-            if (NA()) {
-                return 1;
-            }
-        }
-    }
-    else if (token.tokenType == LITERAL) {
-        if (NA()) {
-            return 1;
-        }
-    }
-    else if (token.tokenType == IDENTIFIER) {
-        if (NA()) {
-            return 1;
-        }
-    }
-    else if (token.tokenType == DELIMITER) {
-        if (A()) {
-            if (token.tokenType == DELIMITER){
-                return 1;
-            }
-        }
-    }
-    else return 0; 
+Ast* parsePrefix(PARSER* parser) {
+  switch (parser->currentToken->type) {
+    case(Identifier): return parseIdentifier(parser);
+    case(BoolTrue):
+    case(BoolFalse): return parseBoolean(parser);
+    case(Not): return parseNot(parser);
+    case(LeftParen): return parseGroup(parser);
+
+    default:;
+  }
+  return AST_NEW(Ast_empty);
+}
+
+Ast* parseIdentifier(PARSER* parser) {
+  TOKEN *idToken = parser->currentToken;
+  if(idToken->type != Identifier) return AST_NEW(Ast_empty);
+
+  Ast* identifier = AST_NEW(Ast_identifier, idToken->content);
+  consumeToken(parser);
+  return identifier;
+}
+
+Ast* parseBoolean(PARSER* parser) {
+  TOKEN* boolToken = parser->currentToken;
+
+  Ast* boolTree;
+  switch (boolToken->type) {
+    case(BoolTrue):
+      boolTree = AST_NEW(Ast_literal_true);
+      break;
+    case(BoolFalse): 
+      boolTree = AST_NEW(Ast_literal_false);
+      break;
+    default: return AST_NEW(Ast_empty);
+  }
+
+  consumeToken(parser);
+  return boolTree;
+}
+
+Ast* parseNot(PARSER* parser) {
+  TOKEN notToken = *parser->currentToken;
+  if(notToken.type != Not) return AST_NEW(Ast_empty);
+
+  consumeToken(parser);
+  Ast* rightTree = parseExpression(parser, 0);
+  return AST_NEW(Ast_not, rightTree);
+}
+
+Ast* parseGroup(PARSER* parser) {
+  consumeToken(parser);
+
+  Ast* expression = parseExpression(parser, 0);
+
+  if(parser->currentToken->type != RightParen) {
+    return AST_NEW(Ast_empty);
+  }
+
+  consumeToken(parser);
+
+  return expression;
 
 }
 
-
-// N.A   -> IO A N.A | IO A
-
-tokenConsume NA(void) {
-    if (token.tokenType == INFIX_OPRATOR) {
-        if (A()) {
-            if (NA()) {
-                return 1;
-            }
-        }
-    }
-    else if (token.tokenType == INFIX_OPRATOR) {
-        if (A()) {
-            return 1;
-        }
-    }
-    else return 0;
+int precedence(TOKEN* token) {
+  switch (token->type) {
+    case(Not): return 4;
+    case(And): return 3;
+    case(Or): return 2;
+    case(LeftImplication): return 1;
+    case(RightImplication): return 1;
+    case(Equivalece): return 1;
+    default: return 0;
+  }
 }
 
+Ast* parseInfix(PARSER* parser, Ast* left) {
+  TOKEN operator = *parser->currentToken;
+  int prec = precedence(&operator);
+
+  consumeToken(parser);
+
+  Ast* right = parseExpression(parser, prec);
+
+  switch (operator.type) {
+    case(And): return AST_NEW(Ast_and, left, right);
+    case(Or): return AST_NEW(Ast_or, left, right);
+    case(LeftImplication): return AST_NEW(Ast_li, left, right);
+    case(RightImplication): return AST_NEW(Ast_ri, left, right);
+    case(Equivalece): return AST_NEW(Ast_eq, left, right);
+    default: return AST_NEW(Ast_empty);
+  }
+}
+
+//Parser
+Ast* parseExpression(PARSER* parser, int prec) {
+  int validPrefix = checkParsePrefix(parser->currentToken);
+
+  if(!validPrefix) {
+    return AST_NEW(Ast_empty);
+  }
+
+  Ast* leftExpression = parsePrefix(parser);
 
 
-int main(void) {
-    TOKEN token = {x, y};
-    return EXIT_SUCCESS;
+  while(parser->nextToken->type != Invalid && prec < precedence(parser->currentToken)) {
+    int validInfix = checkParseInfix(parser->currentToken);
+
+    if(!validInfix) {
+      return AST_NEW(Ast_empty);
+    }
+
+    leftExpression = parseInfix(parser, leftExpression);
+    
+  }
+
+  return leftExpression;
+}
+
+Ast* parse(char* input) {
+  printf("parsing: %s ...\n", input);
+
+  LEXER* lexer = createLexer(input);
+  PARSER* parser = createParser(lexer);
+
+  return parseExpression(parser, 0);
 }
