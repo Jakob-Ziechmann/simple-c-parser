@@ -179,8 +179,6 @@ Ast* parseExpression(PARSER* parser, int prec) {
 }
 
 Ast* parse(char* input) {
-  printf("parsing: %s ...\n", input);
-
   LEXER* lexer = createLexer(input);
   PARSER* parser = createParser(lexer);
 
