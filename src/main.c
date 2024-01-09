@@ -11,16 +11,12 @@
 
 int main(void){
 
-  Ast* tree = parse("(a => b)");
+  Ast* tree = parse("a");
 
-  Map map;
-
-  initializeMap(&map, 2);
-  insertIntoMap(&map, "a", 0);
-  insertIntoMap(&map, "b", 1);
+  Map* map = generateMapFromTree(tree);
 
   ast_print(tree);
-  printf(" evaluates to %d\n", evaluateTree(tree, &map));
+  printf(" evaluates to %d\n", evaluateTree(tree, map));
 
   return EXIT_SUCCESS;
 }
